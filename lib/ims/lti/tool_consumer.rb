@@ -46,6 +46,20 @@ module IMS::LTI
     #
     #
     def generate_launch_data
+      request = generate_request
+
+      # the request is made by a html form in the user's browser, so we
+      # want to revert the escapage and return the hash of post parameters ready
+      # for embedding in a html view
+      hash = {}
+      request.body.split(/&/).each do |param|
+        key, val = param.split(/=/).map { |v| CGI.unescape(v) }
+        hash[key] = val
+      end
+      hash
+    end
+
+    def generate_request
       raise IMS::LTI::InvalidLTIConfigError, "Not all required params set for tool launch" unless has_required_params?
 
       params = self.to_params
@@ -60,8 +74,8 @@ module IMS::LTI
       end
 
       consumer = OAuth::Consumer.new(@consumer_key, @consumer_secret, {
-              :site => "#{uri.scheme}://#{host}",
-              :signature_method => "HMAC-SHA1"
+          :site => "#{uri.scheme}://#{host}",
+          :signature_method => "HMAC-SHA1"
       })
 
       path = uri.path
@@ -74,21 +88,17 @@ module IMS::LTI
         end
       end
       options = {
-              :scheme => 'body',
-              :timestamp => @timestamp,
-              :nonce => @nonce
+          :scheme => 'body',
+          :timestamp => @timestamp,
+          :nonce => @nonce
       }
-      request = consumer.create_signed_request(:post, path, nil, options, params)
+      consumer.create_signed_request(:post, path, nil, options, params)
+    end
 
-      # the request is made by a html form in the user's browser, so we
-      # want to revert the escapage and return the hash of post parameters ready
-      # for embedding in a html view
-      hash = {}
-      request.body.split(/&/).each do |param|
-        key, val = param.split(/=/).map { |v| CGI.unescape(v) }
-        hash[key] = val
-      end
-      hash
+    def send_request(request=generate_request)
+      uri = URI.parse(@launch_url)
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.request(request)
     end
 
   end

@@ -4,6 +4,9 @@ require "rexml/document"
 require 'uuid'
 require 'cgi'
 
+require "net/http"
+require "uri"
+
 module IMS # :nodoc:
 
   # :main:IMS::LTI
