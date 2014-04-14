@@ -139,6 +139,7 @@ module IMS::LTI
       doc = REXML::Document.new xml
       @message_identifier = doc.text("//imsx_POXRequestHeaderInfo/imsx_messageIdentifier")
       @lis_result_sourcedid = doc.text("//resultRecord/sourcedGUID/sourcedId")
+      @lis_result_sourcedid ||= REXML::XPath.first(doc, "//sourcedId").text
 
       if REXML::XPath.first(doc, "//deleteResultRequest")
         @operation = DELETE_REQUEST
